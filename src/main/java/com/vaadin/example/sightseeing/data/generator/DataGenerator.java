@@ -25,21 +25,14 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 public class DataGenerator {
     
     // For avoiding having the vaadin-map flow dependency here
-    static class Coordinate {
-        final double x;
-        final double y;
+    public static class Coordinate {
+        public final double x;
+        public final double y;
         public Coordinate(double x, double y) {
             this.x = x;
             this.y = y;
         }
-        public double getX() {
-            return x;
-        }
-        public double getY() {
-            return y;
-        }
     }
-
 
     private static Coordinate TURKU_OFFICE = new Coordinate(22.3, 60.452);
     private static Coordinate BERLIN_OFFICE = new Coordinate(52.5140668,13.4544345);
@@ -79,8 +72,8 @@ public class DataGenerator {
 
             logger.info("Filling Database with places center=" + CENTER + " radio=" + RATIO);
             Set<Place> places = new OverpassService()
-                    .getPlaces(CENTER.getY() - RATIO, CENTER.getX() - RATIO,
-                            CENTER.getY() + RATIO, CENTER.getX() + RATIO)
+                    .getPlaces(CENTER.y - RATIO, CENTER.x - RATIO,
+                            CENTER.y + RATIO, CENTER.x + RATIO)
                     .stream()
                     .filter(p -> p.getName() != null && !p.getName().isBlank()
                             && !"yes".equals(p.getName()))
