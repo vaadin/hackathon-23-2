@@ -52,6 +52,11 @@ public class MapView extends VerticalLayout {
         view.setCenter(DataGenerator.CENTER);
         view.setZoom(14);
 
+        try {
+            MarkerFeature.POINT_ICON.setScale(.20f);
+        } catch (Exception e2) {
+            // https://github.com/vaadin/flow-components/issues/3641
+        }
 
         MarkerFeature current = new MarkerFeature(DataGenerator.CENTER,
                 MarkerFeature.PIN_ICON);
@@ -91,21 +96,23 @@ public class MapView extends VerticalLayout {
     }
 
     private String toHtml(Place p) {
+        String coord = String.format("@%f,%f", p.getY(), p.getX());
+        String mapUrl = String.format("https://www.google.com/maps/%s,100m/data=!3m1!1e3", coord);
         return "<ul>"
                 + p.getTags().stream().filter(t -> !t.getName().contains(":"))
                         .map(t -> toHtml(t)).collect(Collectors.joining())
-                + "<li><b>coordinates</b>: @" + p.getX() + "," + p.getY() + "</li></ul>";
+                + String.format("<li><b>coordinates</b>: <a target=_blank href=\"%s\">%s</a></li></ul>", mapUrl, coord);
     }
 
     private String toHtml(Tag t) {
-        String name = t.getName().replace("_", "");
+        String name = t.getName().replace("_", " ");
         String val = t.getVal();
         if ("wikipedia".equals(t.getName())) {
             val = val.replaceFirst("^(..?):(.+)$", "<a target=_blank href=\"https://$1.wikipedia.org/wiki/$2\">$2</a>");
-        } else if ("website".equals(t.getName())) {
+        } else if (t.getName().matches("website|url")) {
             val = "<a target=_blank href=\"" + val + "\">\uD83D\uDD17</a>";
         } else {
-            val = val.replace("_", "");
+            val = val.replace("_", " ");
         }
         return "<li><b>" + name + "</b>: " + val + "</li>";
     }
