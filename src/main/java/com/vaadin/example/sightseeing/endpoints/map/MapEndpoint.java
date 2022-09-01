@@ -1,6 +1,11 @@
 package com.vaadin.example.sightseeing.endpoints.map;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+
 import dev.hilla.Endpoint;
 import dev.hilla.Nonnull;
 
@@ -9,11 +14,7 @@ import dev.hilla.Nonnull;
 public class MapEndpoint {
 
     @Nonnull
-    public String sayHello(@Nonnull String name) {
-        if (name.isEmpty()) {
-            return "Hello stranger";
-        } else {
-            return "Hello " + name;
-        }
+    public List<@Nonnull Double> getCenter() {
+        return new ArrayList<>(Arrays.asList(22.3d, 60.452d));
     }
 }

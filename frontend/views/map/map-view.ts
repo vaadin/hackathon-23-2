@@ -1,34 +1,38 @@
-import '@vaadin/button';
-import '@vaadin/notification';
-import { Notification } from '@vaadin/notification';
-import '@vaadin/text-field';
-import * as MapEndpoint from 'Frontend/generated/MapEndpoint';
 import { html } from 'lit';
-import { customElement } from 'lit/decorators.js';
+import { customElement, query } from 'lit/decorators.js';
 import { View } from '../../views/view';
+import "@vaadin/map";
+import TileLayer from "ol/layer/Tile";
+import OSM from "ol/source/OSM";
+import OlView from "ol/View";
+import { setUserProjection } from 'ol/proj';
+import type { Map } from '@vaadin/map';
+import * as MapEndpoint from 'Frontend/generated/MapEndpoint';
 
 @customElement('map-view')
 export class MapView extends View {
-  name = '';
 
-  connectedCallback() {
+  @query('#map')
+  private map!: Map;
+
+  async connectedCallback() {
     super.connectedCallback();
-    this.classList.add('flex', 'p-m', 'gap-m', 'items-end');
+
+    customElements.whenDefined("vaadin-map").then(async () => {
+      setUserProjection('EPSG:4326');
+      this.map.configuration.addLayer(new TileLayer({
+        source: new OSM()
+      }));
+      this.map.configuration.setView(new OlView({
+        center: await MapEndpoint.getCenter(),
+        zoom: 12
+      })); 
+    });
   }
 
   render() {
     return html`
-      <vaadin-text-field label="Your name" @value-changed=${this.nameChanged}></vaadin-text-field>
-      <vaadin-button @click=${this.sayHello}>Say hello</vaadin-button>
+      <vaadin-map id="map" theme="borderless"></vaadin-map>
     `;
-  }
-
-  nameChanged(e: CustomEvent) {
-    this.name = e.detail.value;
-  }
-
-  async sayHello() {
-    const serverResponse = await MapEndpoint.sayHello(this.name);
-    Notification.show(serverResponse);
   }
 }
