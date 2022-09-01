@@ -5,11 +5,15 @@ import dev.hilla.Nonnull;
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 @Entity
 public class Tag extends AbstractEntity {
 
     @ManyToOne
     @Nonnull
+    @JsonIgnore // To avoid loop
     private Place place;
     @Nonnull
     private String name;
@@ -17,6 +21,7 @@ public class Tag extends AbstractEntity {
     private String val;
     @Nonnull
     private boolean enabled = true;
+
     public Tag() {
     }
 
@@ -24,9 +29,6 @@ public class Tag extends AbstractEntity {
         this.place = place;
         this.name = name;
         this.val = val;
-        if (place.getName() == null) {
-
-        }
     }
 
     public Place getPlace() {
@@ -35,6 +37,17 @@ public class Tag extends AbstractEntity {
     public void setPlace(Place place) {
         this.place = place;
     }
+
+    // TODO: report that @JsonSerialize in getter does not work in hilla,
+    // it needs to define the private property
+    @Nonnull
+    private String placeName;
+
+    @JsonSerialize
+    public String getPlaceName() {
+        return this.place.getName();
+    }
+
     public String getName() {
         return name;
     }
@@ -58,5 +71,4 @@ public class Tag extends AbstractEntity {
         return "[place=" + place.getId()
                 + ", name=" + name + ", val=" + val + ", enabled=" + enabled + "]";
     }
-
 }

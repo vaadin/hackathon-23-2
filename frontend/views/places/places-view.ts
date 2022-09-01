@@ -53,9 +53,6 @@ export class PlacesView extends View {
             <vaadin-grid-sort-column path="name" auto-width></vaadin-grid-sort-column>
             <vaadin-grid-sort-column path="x" auto-width></vaadin-grid-sort-column>
             <vaadin-grid-sort-column path="y" auto-width></vaadin-grid-sort-column>
-            <vaadin-grid-sort-column path="tags" auto-width></vaadin-grid-sort-column>
-            <vaadin-grid-sort-column path="updated" auto-width></vaadin-grid-sort-column>
-            <vaadin-grid-sort-column path="oid" auto-width></vaadin-grid-sort-column>
             <vaadin-grid-column
               path="enabled"
               auto-width
@@ -81,14 +78,6 @@ export class PlacesView extends View {
               ><vaadin-text-field label="Name" id="name" ${field(this.binder.model.name)}></vaadin-text-field
               ><vaadin-text-field label="X" id="x" ${field(this.binder.model.x)}></vaadin-text-field
               ><vaadin-text-field label="Y" id="y" ${field(this.binder.model.y)}></vaadin-text-field
-              ><vaadin-text-field label="Tags" id="tags" ${field(this.binder.model.tags)}></vaadin-text-field
-              ><vaadin-date-time-picker
-                label="Updated"
-                id="updated"
-                step="1"
-                ${field(this.binder.model.updated)}
-              ></vaadin-date-time-picker
-              ><vaadin-text-field label="Oid" id="oid" ${field(this.binder.model.oid)}></vaadin-text-field
               ><vaadin-checkbox id="enabled" ${field(this.binder.model.enabled)} label="Enabled"></vaadin-checkbox
             ></vaadin-form-layout>
           </div>

@@ -50,7 +50,7 @@ export class TagsView extends View {
             .dataProvider=${this.gridDataProvider}
             @active-item-changed=${this.itemSelected}
           >
-            <vaadin-grid-sort-column path="place" auto-width></vaadin-grid-sort-column>
+            <vaadin-grid-sort-column path="placeName" auto-width></vaadin-grid-sort-column>
             <vaadin-grid-sort-column path="name" auto-width></vaadin-grid-sort-column>
             <vaadin-grid-sort-column path="val" auto-width></vaadin-grid-sort-column>
             <vaadin-grid-column
@@ -75,7 +75,7 @@ export class TagsView extends View {
         <div class="editor-layout">
           <div class="editor">
             <vaadin-form-layout
-              ><vaadin-text-field label="Place" id="place" ${field(this.binder.model.place)}></vaadin-text-field
+              ><vaadin-text-field label="Place" id="place" ${field(this.binder.model.placeName)} readonly></vaadin-text-field
               ><vaadin-text-field label="Name" id="name" ${field(this.binder.model.name)}></vaadin-text-field
               ><vaadin-text-field label="Val" id="val" ${field(this.binder.model.val)}></vaadin-text-field
               ><vaadin-checkbox id="enabled" ${field(this.binder.model.enabled)} label="Enabled"></vaadin-checkbox
