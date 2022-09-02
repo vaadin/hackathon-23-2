@@ -3,6 +3,8 @@ package com.vaadin.example.sightseeing.views.map;
 import java.util.HashMap;
 import java.util.stream.Collectors;
 
+import javax.annotation.security.PermitAll;
+
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.vaadin.example.sightseeing.data.entity.Place;
@@ -21,6 +23,8 @@ import com.vaadin.flow.component.map.configuration.Coordinate;
 import com.vaadin.flow.component.map.configuration.Feature;
 import com.vaadin.flow.component.map.configuration.View;
 import com.vaadin.flow.component.map.configuration.feature.MarkerFeature;
+import com.vaadin.flow.component.map.configuration.layer.TileLayer;
+import com.vaadin.flow.component.map.configuration.source.OSMSource;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -28,7 +32,6 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
-import javax.annotation.security.PermitAll;
 
 @PageTitle("Map")
 @Route(value = "map")
@@ -47,10 +50,28 @@ public class MapView extends VerticalLayout {
         setSizeFull();
         setPadding(false);
 
+        OSMSource source1 = new OSMSource();
+        source1.setUrl(
+                "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}");
+        TileLayer tileLayer1 = new TileLayer();
+        tileLayer1.setSource(source1);
+
+        OSMSource source2 = new OSMSource();
+        TileLayer tileLayer2 = new TileLayer();
+        tileLayer2.setSource(source2);
+
+        map.setBackgroundLayer(tileLayer1);
+
         map.getElement().setAttribute("theme", "borderless");
         View view = map.getView();
         view.setCenter(DataGenerator.CENTER);
         view.setZoom(14);
+
+        Button b = new Button("Change");
+        b.addClickListener(e -> {
+            map.setBackgroundLayer(map.getBackgroundLayer() == tileLayer1 ? tileLayer2 : tileLayer1);
+        });
+        b.getElement().getStyle().set("position", "absolute");
 
         try {
             MarkerFeature.POINT_ICON.setScale(.20f);
@@ -70,7 +91,7 @@ public class MapView extends VerticalLayout {
         });
 
         map.addFeatureClickListener(e -> showPlace(places.get(e.getFeature())));
-        addAndExpand(map);
+        addAndExpand(map, b);
     }
 
     private Notification createNotification(final Component text, final Component body) {
