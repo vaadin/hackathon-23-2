@@ -6,25 +6,36 @@ import java.util.stream.Collectors;
 import javax.annotation.security.PermitAll;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.vaadin.example.sightseeing.data.entity.Place;
 import com.vaadin.example.sightseeing.data.entity.Tag;
 import com.vaadin.example.sightseeing.data.generator.DataGenerator;
 import com.vaadin.example.sightseeing.data.service.PlaceRepository;
+import com.vaadin.example.sightseeing.views.places.PlacesView;
+import com.vaadin.example.sightseeing.views.tags.TagsView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.Text;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.contextmenu.MenuItem;
+import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.map.Map;
+import com.vaadin.flow.component.map.MapVariant;
 import com.vaadin.flow.component.map.configuration.Coordinate;
 import com.vaadin.flow.component.map.configuration.Feature;
 import com.vaadin.flow.component.map.configuration.View;
 import com.vaadin.flow.component.map.configuration.feature.MarkerFeature;
 import com.vaadin.flow.component.map.configuration.layer.TileLayer;
 import com.vaadin.flow.component.map.configuration.source.OSMSource;
+import com.vaadin.flow.component.menubar.MenuBar;
+import com.vaadin.flow.component.menubar.MenuBarVariant;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -37,7 +48,10 @@ import com.vaadin.flow.router.RouteAlias;
 @Route(value = "map")
 @RouteAlias(value = "")
 @PermitAll
+@SuppressWarnings("serial")
 public class MapView extends VerticalLayout {
+
+    private static final String SAT_URL = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
 
     private Map map = new Map();
     private HashMap<Feature, Place> places = new HashMap<>();
@@ -45,43 +59,28 @@ public class MapView extends VerticalLayout {
     private Div body = new Div();
     private Notification notification = createNotification(text, body);
 
+
     @Autowired
     public MapView(PlaceRepository repo) {
         setSizeFull();
         setPadding(false);
 
-        OSMSource source1 = new OSMSource();
-        source1.setUrl(
-                "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}");
-        TileLayer tileLayer1 = new TileLayer();
-        tileLayer1.setSource(source1);
+        map.addThemeVariants(MapVariant.BORDERLESS);
 
-        OSMSource source2 = new OSMSource();
-        TileLayer tileLayer2 = new TileLayer();
-        tileLayer2.setSource(source2);
-
-        map.setBackgroundLayer(tileLayer1);
-
-        map.getElement().setAttribute("theme", "borderless");
         View view = map.getView();
         view.setCenter(DataGenerator.CENTER);
         view.setZoom(14);
-
-        Button b = new Button("Change");
-        b.addClickListener(e -> {
-            map.setBackgroundLayer(map.getBackgroundLayer() == tileLayer1 ? tileLayer2 : tileLayer1);
-        });
-        b.getElement().getStyle().set("position", "absolute");
-
-        try {
-            MarkerFeature.POINT_ICON.setScale(.20f);
-        } catch (Exception e2) {
-            // https://github.com/vaadin/flow-components/issues/3641
-        }
+        Component buttons = setupButtons();
 
         MarkerFeature current = new MarkerFeature(DataGenerator.CENTER,
                 MarkerFeature.PIN_ICON);
         map.getFeatureLayer().addFeature(current);
+
+        try {
+            MarkerFeature.POINT_ICON.setScale(.17f);
+        } catch (@SuppressWarnings("unused") Exception e2) {
+            // https://github.com/vaadin/flow-components/issues/3641
+        }
 
         repo.findAll().forEach(place -> {
             MarkerFeature feat = new MarkerFeature(new Coordinate(place.getX(), place.getY()),
@@ -91,7 +90,7 @@ public class MapView extends VerticalLayout {
         });
 
         map.addFeatureClickListener(e -> showPlace(places.get(e.getFeature())));
-        addAndExpand(map, b);
+        addAndExpand(map, buttons);
     }
 
     private Notification createNotification(final Component text, final Component body) {
@@ -136,5 +135,54 @@ public class MapView extends VerticalLayout {
             val = val.replace("_", " ");
         }
         return "<li><b>" + name + "</b>: " + val + "</li>";
+    }
+
+    private Component setupButtons() {
+
+        MenuBar buttons = new MenuBar();
+        buttons.addThemeVariants(MenuBarVariant.LUMO_TERTIARY_INLINE);
+        buttons.addThemeVariants(MenuBarVariant.LUMO_END_ALIGNED);
+        buttons.getElement().getStyle().set("position", "absolute");
+        buttons.getElement().getStyle().set("right", "0px");
+
+        MenuItem mapView = createIconItem(buttons, VaadinIcon.ROAD, "Map View");
+        MenuItem satView = createIconItem(buttons, VaadinIcon.ROCKET, "Satellite View");
+        mapView.setVisible(false);
+
+        TileLayer mapLayer = new TileLayer() {{setSource(new OSMSource());}};
+        TileLayer satLayer = new TileLayer() {{setSource(new OSMSource() {{setUrl(SAT_URL);}});}};
+
+        mapView.addClickListener(e -> {
+            map.setBackgroundLayer(mapLayer);
+            mapView.setVisible(false);
+            satView.setVisible(true);
+        });
+        satView.addClickListener(e -> {
+            map.setBackgroundLayer(satLayer);
+            mapView.setVisible(true);
+            satView.setVisible(false);
+        });
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+            MenuItem admin = createIconItem(buttons, VaadinIcon.COG_O, "Admin");
+            SubMenu adminSubMenu = admin.getSubMenu();
+            MenuItem places = adminSubMenu.addItem("Places");
+            MenuItem tags = adminSubMenu.addItem("Tags");
+            places.addClickListener(e -> UI.getCurrent().navigate(PlacesView.class));
+            tags.addClickListener(e -> UI.getCurrent().navigate(TagsView.class));
+        }
+
+        return buttons;
+    }
+
+    private MenuItem createIconItem(MenuBar menu, VaadinIcon iconName, String ariaLabel) {
+        Icon icon = new Icon(iconName);
+        MenuItem item = menu.addItem(icon);
+        item.getElement().setAttribute("aria-label", ariaLabel);
+        item.getElement().getStyle().set("background", "var(--lumo-tint-60pct)");
+        item.getElement().getStyle().set("borderRadius", "5px");
+        item.getElement().getStyle().set("width", "36px");
+        return item;
     }
 }
