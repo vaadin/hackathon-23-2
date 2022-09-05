@@ -1,6 +1,8 @@
 package com.vaadin.example.sightseeing.views.map;
 
 import com.vaadin.example.sightseeing.data.generator.DataGenerator;
+import com.vaadin.example.sightseeing.data.service.PlaceRepository;
+import com.vaadin.example.sightseeing.data.service.PlaceService;
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -10,7 +12,6 @@ import com.vaadin.flow.component.map.configuration.Coordinate;
 import com.vaadin.flow.component.map.configuration.View;
 import com.vaadin.flow.component.map.configuration.feature.MarkerFeature;
 import com.vaadin.flow.component.map.configuration.style.Icon;
-import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -18,6 +19,7 @@ import com.vaadin.flow.router.RouteAlias;
 
 import javax.annotation.security.PermitAll;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.vaadin.firitin.geolocation.Geolocation;
 import org.vaadin.firitin.geolocation.GeolocationCoordinates;
 
@@ -27,11 +29,14 @@ import org.vaadin.firitin.geolocation.GeolocationCoordinates;
 @PermitAll
 public class MapView extends VerticalLayout {
 
+    @Autowired
+    private PlaceService placeService;
+    @Autowired
+    private PlaceRepository placeRepository;
+
     private Map map = new Map();
     private MarkerFeature userMarker;
     private boolean initialCoordinates = true;
-    private MenuBar menuBar;
-
 
     public MapView() {
         setSizeFull();
@@ -65,6 +70,7 @@ public class MapView extends VerticalLayout {
     protected void onAttach(AttachEvent attachEvent) {
         if (attachEvent.isInitialAttach()) {
             Geolocation.watchPosition((event)-> refreshUserMarker(event.getCoords()), null);
+            loadPlaces();
         }
     }
 
@@ -76,6 +82,12 @@ public class MapView extends VerticalLayout {
             // Updates center to the user location, just once.
             centerOnUser();
         }
+    }
+
+    private void loadPlaces() {
+        placeRepository.findAll().forEach(place -> {
+            map.getFeatureLayer().addFeature(new MarkerFeature(new Coordinate(place.getX(), place.getY())));
+        });
     }
 
     private void centerOnUser() {
