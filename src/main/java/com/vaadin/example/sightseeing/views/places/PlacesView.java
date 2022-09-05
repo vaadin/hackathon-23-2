@@ -2,7 +2,6 @@ package com.vaadin.example.sightseeing.views.places;
 
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Consumer;
 
 import javax.annotation.security.RolesAllowed;
 
@@ -19,17 +18,13 @@ import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.dependency.Uses;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.Grid.Column;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.HeaderRow;
-import com.vaadin.flow.component.grid.Grid.Column;
-import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
-import com.vaadin.flow.component.grid.dataview.GridListDataView;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
@@ -62,7 +57,7 @@ public class PlacesView extends Div implements BeforeEnterObserver {
     private TextField y;
     private Checkbox enabled;
 
-    private Button cancel = new Button("Cancel");
+    private Button clear = new Button("Clear");
     private Button save = new Button("Save");
 
     private String filter = null;
@@ -119,7 +114,7 @@ public class PlacesView extends Div implements BeforeEnterObserver {
 
         binder.bindInstanceFields(this);
 
-        cancel.addClickListener(e -> {
+        clear.addClickListener(e -> {
             clearForm();
             refreshGrid();
         });
@@ -191,9 +186,9 @@ public class PlacesView extends Div implements BeforeEnterObserver {
     private void createButtonLayout(Div editorLayoutDiv) {
         HorizontalLayout buttonLayout = new HorizontalLayout();
         buttonLayout.setClassName("button-layout");
-        cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        clear.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        buttonLayout.add(save, cancel);
+        buttonLayout.add(save, clear);
         editorLayoutDiv.add(buttonLayout);
     }
 

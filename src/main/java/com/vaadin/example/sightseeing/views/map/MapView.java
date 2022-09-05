@@ -41,6 +41,9 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.textfield.TextFieldVariant;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
@@ -59,11 +62,15 @@ public class MapView extends VerticalLayout {
     private Div text = new Div(new Text(""));
     private Div body = new Div();
     private Notification notification = createNotification(text, body);
-    MarkerFeature current;
+    private MarkerFeature current;
+    private String filter = null;
+    private PlaceRepository repo;
 
 
     @Autowired
     public MapView(PlaceRepository repo) {
+        this.repo = repo;
+
         setSizeFull();
         setPadding(false);
 
@@ -74,23 +81,12 @@ public class MapView extends VerticalLayout {
         view.setZoom(14);
         Component buttons = setupButtons();
 
-        current = new MarkerFeature(DataGenerator.CENTER,
-                MarkerFeature.PIN_ICON);
-        map.getFeatureLayer().addFeature(current);
-
         try {
             MarkerFeature.POINT_ICON.setScale(.17f);
         } catch (@SuppressWarnings("unused") Exception e2) {
             // https://github.com/vaadin/flow-components/issues/3641
         }
 
-        repo.findAll().stream().filter(p -> p.isEnabled()).forEach(place -> {
-            MarkerFeature feat = new MarkerFeature(new Coordinate(place.getX(), place.getY()),
-                    MarkerFeature.POINT_ICON);
-            feat.setId(place.getId().toString());
-            map.getFeatureLayer().addFeature(feat);
-            places.put(feat, place);
-        });
         getElement().executeJs(""
                 + "const elm = this;"
                 + "navigator.geolocation.watchPosition("
@@ -112,11 +108,17 @@ public class MapView extends VerticalLayout {
                 + "", map.getElement());
         map.addFeatureClickListener(e -> showPlace(places.get(e.getFeature())));
         addAndExpand(map, buttons);
+        refreshPOIs();
     }
 
     @ClientCallable
     private void updateLocation(double lon, double lat) {
         Coordinate coordinate = new Coordinate(lon, lat);
+        if (current == null) {
+            current = new MarkerFeature(DataGenerator.CENTER,
+                    MarkerFeature.PIN_ICON);
+            map.getFeatureLayer().addFeature(current);
+        }
         current.setCoordinates(coordinate);
     }
 
@@ -145,6 +147,33 @@ public class MapView extends VerticalLayout {
         layout.setJustifyContentMode(JustifyContentMode.BETWEEN);
         notification.add(layout, body);
         return notification;
+    }
+
+    private Component createFilterTextbox() {
+        TextField textField = new TextField();
+        textField.setValueChangeMode(ValueChangeMode.EAGER);
+        textField.setClearButtonVisible(true);
+        textField.addThemeVariants(TextFieldVariant.LUMO_SMALL);
+        textField.setPlaceholder("Search");
+        textField.setPrefixComponent(new Icon(VaadinIcon.SEARCH));
+        textField.addValueChangeListener(e -> {
+            this.filter = e.getValue();
+            refreshPOIs();
+        });
+        return textField;
+    }
+
+    private void refreshPOIs() {
+        places.keySet().forEach(f -> map.getFeatureLayer().removeFeature(f));
+        places.clear();
+        ((filter == null || filter.isBlank()) ? repo.findAll() : repo.findByNameContainingIgnoreCase(filter))
+                .stream().filter(p -> p.isEnabled()).forEach(place -> {
+                    MarkerFeature feat = new MarkerFeature(new Coordinate(place.getX(), place.getY()),
+                            MarkerFeature.POINT_ICON);
+                    feat.setId(place.getId().toString());
+                    map.getFeatureLayer().addFeature(feat);
+                    places.put(feat, place);
+                });
     }
 
     private void showPlace(Place p) {
@@ -180,11 +209,14 @@ public class MapView extends VerticalLayout {
 
     private Component setupButtons() {
 
+
         MenuBar buttons = new MenuBar();
         buttons.addThemeVariants(MenuBarVariant.LUMO_TERTIARY_INLINE);
         buttons.addThemeVariants(MenuBarVariant.LUMO_END_ALIGNED);
         buttons.getElement().getStyle().set("position", "absolute");
         buttons.getElement().getStyle().set("right", "0px");
+
+        buttons.addItem(createFilterTextbox());
 
         MenuItem mapView = createIconItem(buttons, VaadinIcon.ROAD, "Map View");
         MenuItem satView = createIconItem(buttons, VaadinIcon.ROCKET, "Satellite View");
