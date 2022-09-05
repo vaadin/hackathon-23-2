@@ -15,6 +15,7 @@ import com.vaadin.example.sightseeing.data.generator.DataGenerator;
 import com.vaadin.example.sightseeing.data.service.PlaceRepository;
 import com.vaadin.example.sightseeing.views.places.PlacesView;
 import com.vaadin.example.sightseeing.views.tags.TagsView;
+import com.vaadin.flow.component.ClientCallable;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.Text;
@@ -58,6 +59,7 @@ public class MapView extends VerticalLayout {
     private Div text = new Div(new Text(""));
     private Div body = new Div();
     private Notification notification = createNotification(text, body);
+    MarkerFeature current;
 
 
     @Autowired
@@ -72,7 +74,7 @@ public class MapView extends VerticalLayout {
         view.setZoom(14);
         Component buttons = setupButtons();
 
-        MarkerFeature current = new MarkerFeature(DataGenerator.CENTER,
+        current = new MarkerFeature(DataGenerator.CENTER,
                 MarkerFeature.PIN_ICON);
         map.getFeatureLayer().addFeature(current);
 
@@ -85,12 +87,51 @@ public class MapView extends VerticalLayout {
         repo.findAll().forEach(place -> {
             MarkerFeature feat = new MarkerFeature(new Coordinate(place.getX(), place.getY()),
                     MarkerFeature.POINT_ICON);
+            feat.setId(place.getOid().toString());
             map.getFeatureLayer().addFeature(feat);
             places.put(feat, place);
         });
-
+        getElement().executeJs(""
+                + "const elm = this;"
+                + "navigator.geolocation.watchPosition("
+                + "  pos => elm.$server.updateLocation(pos.coords.longitude, pos.coords.latitude),"
+                + "  err => {}, "
+                + "  { enableHighAccuracy: true, timeout: 5000, maximumAge: 1000 }"
+                + ");"
+                + "const map = $0.configuration;"
+                + "map.getViewport().addEventListener('contextmenu', ev => {"
+                + " ev.preventDefault();"
+                + " const feats = map.getFeaturesAtPixel(map.getEventPixel(ev));"
+                + " if (feats.length == 0) {"
+                + "   const coord = map.getCoordinateFromPixel([ev.layerX,ev.layerY]);"
+                + "   elm.$server.newPlace(coord[0], coord[1]);"
+                + " } else if (feats.length == 1) {"
+                + "   elm.$server.editPlace(feats[0].id);"
+                + " }"
+                + "});"
+                + "", map.getElement());
         map.addFeatureClickListener(e -> showPlace(places.get(e.getFeature())));
         addAndExpand(map, buttons);
+    }
+
+    @ClientCallable
+    private void updateLocation(double lon, double lat) {
+        Coordinate coordinate = new Coordinate(lon, lat);
+        current.setCoordinates(coordinate);
+    }
+
+    @ClientCallable
+    private void newPlace(double lon, double lat) {
+        Coordinate coordinate = new Coordinate(lon, lat);
+        System.err.println(coordinate);
+    }
+
+    @ClientCallable
+    private void editPlace(double id) {
+        Place place = places.values().stream().filter(p -> p.getOid() == id).findFirst().get();
+        if (place != null) {
+            System.err.println(place.getName());
+        }
     }
 
     private Notification createNotification(final Component text, final Component body) {
