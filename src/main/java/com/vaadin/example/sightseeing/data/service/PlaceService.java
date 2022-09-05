@@ -30,7 +30,10 @@ public class PlaceService {
         repository.deleteById(id);
     }
 
-    public Page<Place> list(Pageable pageable) {
+    public Page<Place> list(String filter, Pageable pageable) {
+        if (filter != null && !filter.isBlank()) {
+            return repository.findByNameContainingIgnoreCase(filter, pageable);
+        }
         return repository.findAll(pageable);
     }
 

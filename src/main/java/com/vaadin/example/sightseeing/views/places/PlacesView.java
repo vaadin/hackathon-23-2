@@ -2,6 +2,7 @@ package com.vaadin.example.sightseeing.views.places;
 
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import javax.annotation.security.RolesAllowed;
 
@@ -19,16 +20,24 @@ import com.vaadin.flow.component.dependency.Uses;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.grid.HeaderRow;
+import com.vaadin.flow.component.grid.Grid.Column;
+import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
+import com.vaadin.flow.component.grid.dataview.GridListDataView;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.converter.StringToDoubleConverter;
 import com.vaadin.flow.data.renderer.LitRenderer;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
@@ -56,34 +65,23 @@ public class PlacesView extends Div implements BeforeEnterObserver {
     private Button cancel = new Button("Cancel");
     private Button save = new Button("Save");
 
+    private String filter = null;
+
     private BeanValidationBinder<Place> binder;
-
     private Place place;
-
     private PlaceService placeService;
 
     @Autowired
     public PlacesView(PlaceService placeService) {
         this.placeService = placeService;
         addClassNames("places-view");
-
-        // Create UI
         SplitLayout splitLayout = new SplitLayout();
-
-        // TextField searchField = new TextField();
-        // searchField.setWidth("50%");
-        // searchField.setPlaceholder("Search");
-        // searchField.setPrefixComponent(new Icon(VaadinIcon.SEARCH));
-        // searchField.setValueChangeMode(ValueChangeMode.EAGER);
-
+        add(splitLayout);
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
 
-        add(splitLayout);
-
-
         // Configure Grid
-        grid.addColumn("name").setAutoWidth(true);
+        Column<Place> nameColumn = grid.addColumn("name").setAutoWidth(true).setSortable(false);
         grid.addColumn("x").setAutoWidth(true);
         grid.addColumn("y").setAutoWidth(true);
         LitRenderer<Place> enabledRenderer = LitRenderer.<Place>of(
@@ -92,12 +90,14 @@ public class PlacesView extends Div implements BeforeEnterObserver {
                         enabled -> enabled.isEnabled()
                                 ? "var(--lumo-primary-text-color)"
                                 : "var(--lumo-disabled-text-color)");
-
         grid.addColumn(enabledRenderer).setHeader("Enabled").setAutoWidth(true);
+        HeaderRow headerRow = grid.appendHeaderRow();
+        headerRow.getCell(nameColumn).setComponent(createFilterLayout());
 
-        grid.setItems(query -> placeService.list(
+        grid.setItems(query -> placeService.list(filter,
                 PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query)))
                 .stream());
+
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // when a row is selected or deselected, populate form
@@ -202,6 +202,20 @@ public class PlacesView extends Div implements BeforeEnterObserver {
         wrapper.setClassName("grid-wrapper");
         splitLayout.addToPrimary(wrapper);
         wrapper.add(grid);
+    }
+
+    private Component createFilterLayout() {
+        TextField textField = new TextField();
+        textField.setValueChangeMode(ValueChangeMode.EAGER);
+        textField.setClearButtonVisible(true);
+        textField.addThemeVariants(TextFieldVariant.LUMO_SMALL);
+        textField.setWidthFull();
+        textField.getStyle().set("max-width", "100%");
+        textField.addValueChangeListener(e -> {
+            this.filter = e.getValue();
+            refreshGrid();
+        });
+        return textField;
     }
 
     private void refreshGrid() {
