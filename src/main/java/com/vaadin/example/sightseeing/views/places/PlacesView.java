@@ -8,7 +8,9 @@ import javax.annotation.security.RolesAllowed;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 
+import com.vaadin.example.sightseeing.CoordinatePicker;
 import com.vaadin.example.sightseeing.data.entity.Place;
+import com.vaadin.example.sightseeing.data.generator.DataGenerator;
 import com.vaadin.example.sightseeing.data.service.PlaceService;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
@@ -23,6 +25,7 @@ import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.HeaderRow;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.map.configuration.Coordinate;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
@@ -53,8 +56,7 @@ public class PlacesView extends Div implements BeforeEnterObserver {
     private Grid<Place> grid = new Grid<>(Place.class, false);
 
     private TextField name;
-    private TextField x;
-    private TextField y;
+    private CoordinatePicker coordinate;
     private Checkbox enabled;
 
     private Button clear = new Button("Clear");
@@ -108,9 +110,22 @@ public class PlacesView extends Div implements BeforeEnterObserver {
         // Configure Form
         binder = new BeanValidationBinder<>(Place.class);
 
-        // Bind fields. This is where you'd define e.g. validation rules
-        binder.forField(x).withConverter(new StringToDoubleConverter("Only numbers are allowed")).bind("x");
-        binder.forField(y).withConverter(new StringToDoubleConverter("Only numbers are allowed")).bind("y");
+        binder.forField(coordinate).bind(place -> {
+            Double x = place.getX();
+            Double y = place.getY();
+            if (x == null || y == null) {
+                return null;
+            }
+            return new Coordinate(x, y);
+        }, (place, coordinate) -> {
+            if (coordinate == null) {
+                place.setX(null);
+                place.setY(null);
+            } else {
+                place.setX(coordinate.getX());
+                place.setY(coordinate.getY());
+            }
+        });
 
         binder.bindInstanceFields(this);
 
@@ -171,10 +186,9 @@ public class PlacesView extends Div implements BeforeEnterObserver {
 
         FormLayout formLayout = new FormLayout();
         name = new TextField("Name");
-        x = new TextField("X");
-        y = new TextField("Y");
+        coordinate = new CoordinatePicker("Location", DataGenerator.CENTER);
         enabled = new Checkbox("Enabled");
-        Component[] fields = new Component[] { name, x, y, enabled };
+        Component[] fields = new Component[] { name, coordinate, enabled };
 
         formLayout.add(fields);
         editorDiv.add(formLayout);
