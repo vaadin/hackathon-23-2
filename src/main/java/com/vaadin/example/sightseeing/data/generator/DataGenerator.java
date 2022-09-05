@@ -39,7 +39,8 @@ public class DataGenerator {
             UserRepository userRepository, PlaceRepository placeRepository, TagRepository tagRepository) {
         return args -> {
             Logger logger = LoggerFactory.getLogger(getClass());
-            if (userRepository.count() != 0L) {
+
+            if (placeRepository.count() != 0L) {
                 logger.info("Using existing database");
                 return;
             }

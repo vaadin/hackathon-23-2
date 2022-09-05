@@ -84,10 +84,10 @@ public class MapView extends VerticalLayout {
             // https://github.com/vaadin/flow-components/issues/3641
         }
 
-        repo.findAll().forEach(place -> {
+        repo.findAll().stream().filter(p -> p.isEnabled()).forEach(place -> {
             MarkerFeature feat = new MarkerFeature(new Coordinate(place.getX(), place.getY()),
                     MarkerFeature.POINT_ICON);
-            feat.setId(place.getOid().toString());
+            feat.setId(place.getId().toString());
             map.getFeatureLayer().addFeature(feat);
             places.put(feat, place);
         });
@@ -123,15 +123,15 @@ public class MapView extends VerticalLayout {
     @ClientCallable
     private void newPlace(double lon, double lat) {
         Coordinate coordinate = new Coordinate(lon, lat);
-        System.err.println(coordinate);
+        MarkerFeature feat = new MarkerFeature(coordinate, MarkerFeature.POINT_ICON);
+        map.getFeatureLayer().addFeature(feat);
+        UI.getCurrent().navigate("places/" + lon + "/" + lat + "/new");
     }
 
     @ClientCallable
-    private void editPlace(double id) {
-        Place place = places.values().stream().filter(p -> p.getOid() == id).findFirst().get();
-        if (place != null) {
-            System.err.println(place.getName());
-        }
+    private void editPlace(String id) {
+        System.err.println(id);
+        UI.getCurrent().navigate("places/" + id + "/edit");
     }
 
     private Notification createNotification(final Component text, final Component body) {
