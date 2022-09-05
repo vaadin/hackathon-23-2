@@ -6,6 +6,8 @@ import java.util.UUID;
 
 import javax.annotation.security.RolesAllowed;
 
+import com.vaadin.example.sightseeing.views.map.MapView;
+import com.vaadin.flow.data.converter.StringToDoubleConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 
@@ -108,8 +110,8 @@ public class PlacesView extends Div implements BeforeEnterObserver {
         binder = new BeanValidationBinder<>(Place.class);
 
         // Bind fields. This is where you'd define e.g. validation rules
-        binder.forField(x).withConverter(new StringToFloatConverter("Only numbers are allowed")).bind("x");
-        binder.forField(y).withConverter(new StringToFloatConverter("Only numbers are allowed")).bind("y");
+        binder.forField(x).withConverter(new StringToDoubleConverter("Only numbers are allowed")).bind("x");
+        binder.forField(y).withConverter(new StringToDoubleConverter("Only numbers are allowed")).bind("y");
 
         binder.bindInstanceFields(this);
 
@@ -181,7 +183,10 @@ public class PlacesView extends Div implements BeforeEnterObserver {
         buttonLayout.setClassName("button-layout");
         cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        buttonLayout.add(save, cancel);
+        Button navigate = new Button("navigate", e -> {
+            UI.getCurrent().navigate(MapView.class);
+        });
+        buttonLayout.add(save, cancel, navigate);
         editorLayoutDiv.add(buttonLayout);
     }
 
