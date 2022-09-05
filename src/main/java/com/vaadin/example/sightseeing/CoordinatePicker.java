@@ -46,9 +46,9 @@ public class CoordinatePicker extends CustomField<Coordinate> {
             map.addClickEventListener(click -> {
                 marker.setCoordinates(click.getCoordinate());
 
-                if (!selectButton.isEnabled()) {
+                selectButton.setEnabled(true);
+                if (!map.getFeatureLayer().getFeatures().contains(marker)) {
                     map.getFeatureLayer().addFeature(marker);
-                    selectButton.setEnabled(true);
                 }
             });
 
