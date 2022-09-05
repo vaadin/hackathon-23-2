@@ -16,102 +16,103 @@ import javax.persistence.OrderColumn;
 
 @Entity
 public class Place extends AbstractEntity {
-
-
+    
     private String name;
     private Double x;
     private Double y;
-
-    final String[] tagNames = {"name:es", "name:en", "name", "description:es", "description:en", "historic", "religion"};
-
+    
+    final String[] tagNames = { "name:en", "name", "description:en", "historic", "religion" };
+    
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     @OrderColumn
     @JoinColumn
     private Set<Tag> tags;
-
+    
     private Long oid;
-
+    
     private LocalDateTime updated;
-
+    
     private boolean enabled = true;
-
+    
     public Place() {
     }
-
+    
     public Place(Long id, double x, double y, Map<String, String> tags, Instant instant) {
-       this.oid = id;
-       if (instant != null) {
-           this.updated = LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
-       }
-       this.x = x;
-       this.y = y;
-       for (String k : tagNames) {
-           if (tags.get(k) != null) {
-               this.name = tags.get(k);
-               break;
-           }
-       }
-       this.tags = tags.entrySet().stream().map(e -> new Tag(this, e.getKey(), e.getValue())).collect(Collectors.toSet());
+        this.oid = id;
+        if (instant != null) {
+            this.updated = LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
+        }
+        this.x = x;
+        this.y = y;
+        for (String k : tagNames) {
+            if (tags.get(k) != null) {
+                this.name = tags.get(k);
+                break;
+            }
+        }
+        this.tags = tags.entrySet().stream().map(e -> new Tag(this, e.getKey(), e.getValue())).collect(Collectors.toSet());
     }
-
+    
     public String getName() {
         return name;
     }
-
+    
     public void setName(String name) {
         this.name = name;
     }
-
+    
     public Double getX() {
         return x;
     }
-
+    
     public void setX(Double x) {
         this.x = x;
     }
-
+    
     public Double getY() {
         return y;
     }
-
+    
     public void setY(Double y) {
         this.y = y;
     }
-
+    
     public Set<Tag> getTags() {
         return tags;
     }
-
+    
     public void setTags(Set<Tag> tags) {
         this.tags = tags;
     }
-
+    
     public LocalDateTime getUpdated() {
         return updated;
     }
-
+    
     public void setUpdated(LocalDateTime updated) {
         this.updated = updated;
     }
-
+    
     public Long getOid() {
         return oid;
     }
-
+    
     public void setOid(Long oid) {
         this.oid = oid;
     }
+    
     public boolean isEnabled() {
         return enabled;
     }
+    
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
-
+    
     @Override
     public String toString() {
-        return "Place [id= " + getId() + "name=" + name + ", x=" + x + ", y=" + y +  ", tags=" + tags + ", oid=" + oid
+        return "Place [id= " + getId() + "name=" + name + ", x=" + x + ", y=" + y + ", tags=" + tags + ", oid=" + oid
                 + ", updated=" + updated + ", enabled=" + enabled + "]";
     }
-
+    
 }
