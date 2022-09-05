@@ -1,3 +1,19 @@
+# Summary of my implementation
+
+The application shows the points of interest surrounding the user's location.
+
+As the user moves around the map, the app checks if the POI's surrounding the new location exceeds a certain threshold, for example, 10. 
+
+If there are fewer POI's then the app fetches POI's from the overpass service for the current center of the map location.
+
+Also, the zoom level is checked when the user moves around so that we do not fetch POI's when the user is zoomed out too far.
+
+On clicking the feature marker, a popup is shown with the title and website link.
+
+Adding a short video file for demo.
+
+
+
 # hackathon-23-2
 Repository for the 23.2 hackathon
 
