@@ -14,8 +14,6 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderColumn;
 
-import com.vaadin.flow.component.map.configuration.Coordinate;
-
 @Entity
 public class Place extends AbstractEntity {
 
@@ -108,23 +106,6 @@ public class Place extends AbstractEntity {
     }
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
-    }
-
-    public Coordinate getCoordinate() {
-        if (x == null || y == null) {
-            return null;
-        }
-        return new Coordinate(x, y);
-    }
-
-    public void setCoordinate(Coordinate coordinate) {
-        if (coordinate == null) {
-            x = null;
-            y = null;
-        } else {
-            x = coordinate.getX();
-            y = coordinate.getY();
-        }
     }
 
     @Override

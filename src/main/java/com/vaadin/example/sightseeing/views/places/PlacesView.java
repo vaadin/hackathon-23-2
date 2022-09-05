@@ -25,6 +25,7 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.map.configuration.Coordinate;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
@@ -107,6 +108,23 @@ public class PlacesView extends Div implements BeforeEnterObserver {
 
         // Configure Form
         binder = new BeanValidationBinder<>(Place.class);
+
+        binder.forField(coordinate).bind(place -> {
+            Double x = place.getX();
+            Double y = place.getY();
+            if (x == null || y == null) {
+                return null;
+            }
+            return new Coordinate(x, y);
+        }, (place, coordinate) -> {
+            if (coordinate == null) {
+                place.setX(null);
+                place.setY(null);
+            } else {
+                place.setX(coordinate.getX());
+                place.setY(coordinate.getY());
+            }
+        });
 
         binder.bindInstanceFields(this);
 
