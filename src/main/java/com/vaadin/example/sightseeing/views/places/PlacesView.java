@@ -9,7 +9,9 @@ import javax.annotation.security.RolesAllowed;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 
+import com.vaadin.example.sightseeing.CoordinatePicker;
 import com.vaadin.example.sightseeing.data.entity.Place;
+import com.vaadin.example.sightseeing.data.generator.DataGenerator;
 import com.vaadin.example.sightseeing.data.service.PlaceService;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
@@ -49,8 +51,7 @@ public class PlacesView extends Div implements BeforeEnterObserver {
     private Grid<Place> grid = new Grid<>(Place.class, false);
 
     private TextField name;
-    private TextField x;
-    private TextField y;
+    private CoordinatePicker coordinate;
     private Checkbox enabled;
 
     private Button cancel = new Button("Cancel");
@@ -107,10 +108,6 @@ public class PlacesView extends Div implements BeforeEnterObserver {
         // Configure Form
         binder = new BeanValidationBinder<>(Place.class);
 
-        // Bind fields. This is where you'd define e.g. validation rules
-        binder.forField(x).withConverter(new StringToFloatConverter("Only numbers are allowed")).bind("x");
-        binder.forField(y).withConverter(new StringToFloatConverter("Only numbers are allowed")).bind("y");
-
         binder.bindInstanceFields(this);
 
         cancel.addClickListener(e -> {
@@ -164,10 +161,9 @@ public class PlacesView extends Div implements BeforeEnterObserver {
 
         FormLayout formLayout = new FormLayout();
         name = new TextField("Name");
-        x = new TextField("X");
-        y = new TextField("Y");
+        coordinate = new CoordinatePicker("Location", DataGenerator.CENTER);
         enabled = new Checkbox("Enabled");
-        Component[] fields = new Component[] { name, x, y, enabled };
+        Component[] fields = new Component[] { name, coordinate, enabled };
 
         formLayout.add(fields);
         editorDiv.add(formLayout);
