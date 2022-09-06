@@ -22,7 +22,7 @@ public static class GeoLocationReceivedEvent extends ComponentEvent<GeoLocation>
     }
 ```
 
-you will be stuck with having `event.details` as the value no matter how many times you try to hotswap the code.
+you will be stuck with having `event.details` as the value no matter how many times you try to hotswap the code. The correct value would be `event.detail`.
 
 ![Screenshot 2022-09-06 at 8 41 29](https://user-images.githubusercontent.com/108755/188555650-46bbcaa0-3fb2-46d0-947b-a7ed18a90fbb.png)
 
