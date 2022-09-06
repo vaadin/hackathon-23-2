@@ -1,6 +1,8 @@
 package com.vaadin.example.sightseeing.data.service;
 
 import com.vaadin.example.sightseeing.data.entity.Place;
+
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +34,10 @@ public class PlaceService {
 
     public Page<Place> list(Pageable pageable) {
         return repository.findAll(pageable);
+    }
+
+    public List<Place> findAll() {
+    	return repository.findAll();
     }
 
     public int count() {
