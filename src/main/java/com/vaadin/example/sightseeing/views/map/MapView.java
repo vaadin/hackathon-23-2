@@ -166,7 +166,8 @@ public class MapView extends VerticalLayout {
     private void refreshPOIs() {
         places.keySet().forEach(f -> map.getFeatureLayer().removeFeature(f));
         places.clear();
-        ((filter == null || filter.isBlank()) ? repo.findAll() : repo.findByNameContainingIgnoreCase(filter))
+        ((filter == null || filter.isBlank()) ? repo.findAll()
+                : repo.findByNameContainingIgnoreCase(filter))
                 .stream().filter(p -> p.isEnabled()).forEach(place -> {
                     MarkerFeature feat = new MarkerFeature(new Coordinate(place.getX(), place.getY()),
                             MarkerFeature.POINT_ICON);
