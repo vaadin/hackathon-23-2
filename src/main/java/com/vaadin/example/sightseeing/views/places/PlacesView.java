@@ -12,6 +12,7 @@ import com.vaadin.example.sightseeing.CoordinatePicker;
 import com.vaadin.example.sightseeing.data.entity.Place;
 import com.vaadin.example.sightseeing.data.generator.DataGenerator;
 import com.vaadin.example.sightseeing.data.service.PlaceService;
+import com.vaadin.example.sightseeing.ui.AdminNav;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -203,7 +204,9 @@ public class PlacesView extends Div implements BeforeEnterObserver {
         clear.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         buttonLayout.add(save, clear);
+        buttonLayout.add(new AdminNav("places"));
         editorLayoutDiv.add(buttonLayout);
+
     }
 
     private void createGridLayout(SplitLayout splitLayout) {

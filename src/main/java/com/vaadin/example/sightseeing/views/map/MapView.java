@@ -66,6 +66,9 @@ public class MapView extends VerticalLayout {
     private String filter = null;
     private PlaceRepository repo;
 
+    private static Coordinate lastCenter;
+    private static Coordinate lastUserPosition;
+    private static Float lastZoom;
 
     @Autowired
     public MapView(PlaceRepository repo) {
@@ -77,8 +80,9 @@ public class MapView extends VerticalLayout {
         map.addThemeVariants(MapVariant.BORDERLESS);
 
         View view = map.getView();
-        view.setCenter(DataGenerator.CENTER);
-        view.setZoom(14);
+        view.setCenter(lastCenter == null ? DataGenerator.CENTER : lastCenter);
+        view.setZoom(lastZoom == null ? 14 : lastZoom);
+        updateUserPosition();
         Component buttons = setupButtons();
 
         try {
@@ -107,18 +111,27 @@ public class MapView extends VerticalLayout {
                 + "});"
                 + "", map.getElement());
         map.addFeatureClickListener(e -> showPlace(places.get(e.getFeature())));
+        map.addViewMoveEndEventListener(e -> {
+            lastCenter = map.getCenter();
+            lastZoom = map.getZoom();
+        });
         addAndExpand(map, buttons);
         refreshPOIs();
+    }
+
+    private void updateUserPosition() {
+        if (current == null) {
+            current = new MarkerFeature(lastUserPosition == null ? DataGenerator.CENTER : lastUserPosition,
+                    MarkerFeature.PIN_ICON);
+            map.getFeatureLayer().addFeature(current);
+        }
     }
 
     @ClientCallable
     private void updateLocation(double lon, double lat) {
         Coordinate coordinate = new Coordinate(lon, lat);
-        if (current == null) {
-            current = new MarkerFeature(DataGenerator.CENTER,
-                    MarkerFeature.PIN_ICON);
-            map.getFeatureLayer().addFeature(current);
-        }
+        lastUserPosition = coordinate;
+        updateUserPosition();
         current.setCoordinates(coordinate);
     }
 
@@ -132,7 +145,6 @@ public class MapView extends VerticalLayout {
 
     @ClientCallable
     private void editPlace(String id) {
-        System.err.println(id);
         UI.getCurrent().navigate("places/" + id + "/edit");
     }
 
