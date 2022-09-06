@@ -13,8 +13,6 @@ import com.vaadin.example.sightseeing.data.entity.Place;
 import com.vaadin.example.sightseeing.data.entity.Tag;
 import com.vaadin.example.sightseeing.data.generator.DataGenerator;
 import com.vaadin.example.sightseeing.data.service.PlaceRepository;
-import com.vaadin.example.sightseeing.views.places.PlacesView;
-import com.vaadin.example.sightseeing.views.tags.TagsView;
 import com.vaadin.flow.component.ClientCallable;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Html;
@@ -24,6 +22,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.contextmenu.SubMenu;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -65,14 +64,12 @@ public class MapView extends VerticalLayout {
     private MarkerFeature current;
     private String filter = null;
     private PlaceRepository repo;
-
-    private static Coordinate lastCenter;
-    private static Coordinate lastUserPosition;
-    private static Float lastZoom;
+    private MapViewState state;
 
     @Autowired
-    public MapView(PlaceRepository repo) {
+    public MapView(PlaceRepository repo, MapViewState state) {
         this.repo = repo;
+        this.state = state;
 
         setSizeFull();
         setPadding(false);
@@ -80,8 +77,8 @@ public class MapView extends VerticalLayout {
         map.addThemeVariants(MapVariant.BORDERLESS);
 
         View view = map.getView();
-        view.setCenter(lastCenter == null ? DataGenerator.CENTER : lastCenter);
-        view.setZoom(lastZoom == null ? 14 : lastZoom);
+        view.setCenter(state.center != null ? state.center : DataGenerator.CENTER);
+        view.setZoom(state.zoom != null ? state.zoom : 14);
         updateUserPosition();
         Component buttons = setupButtons();
 
@@ -110,10 +107,11 @@ public class MapView extends VerticalLayout {
                 + " }"
                 + "});"
                 + "", map.getElement());
-        map.addFeatureClickListener(e -> showPlace(places.get(e.getFeature())));
+        map.addFeatureClickListener(e -> showPlaceInfo(places.get(e.getFeature())));
         map.addViewMoveEndEventListener(e -> {
-            lastCenter = map.getCenter();
-            lastZoom = map.getZoom();
+            state.center = map.getCenter();
+            state.zoom = map.getZoom();
+            state.position = current.getCoordinates();
         });
         addAndExpand(map, buttons);
         refreshPOIs();
@@ -121,7 +119,7 @@ public class MapView extends VerticalLayout {
 
     private void updateUserPosition() {
         if (current == null) {
-            current = new MarkerFeature(lastUserPosition == null ? DataGenerator.CENTER : lastUserPosition,
+            current = new MarkerFeature(state.position != null ? state.position : DataGenerator.CENTER,
                     MarkerFeature.PIN_ICON);
             map.getFeatureLayer().addFeature(current);
         }
@@ -129,10 +127,10 @@ public class MapView extends VerticalLayout {
 
     @ClientCallable
     private void updateLocation(double lon, double lat) {
-        Coordinate coordinate = new Coordinate(lon, lat);
-        lastUserPosition = coordinate;
+        Coordinate position = new Coordinate(lon, lat);
+        state.position = position;
         updateUserPosition();
-        current.setCoordinates(coordinate);
+        current.setCoordinates(position);
     }
 
     @ClientCallable
@@ -145,7 +143,11 @@ public class MapView extends VerticalLayout {
 
     @ClientCallable
     private void editPlace(String id) {
-        UI.getCurrent().navigate("places/" + id + "/edit");
+        if (current.getId().equals(id)) {
+            newPlace(current.getCoordinates().getX(), current.getCoordinates().getY());
+        } else {
+            UI.getCurrent().navigate("places/" + id + "/edit");
+        }
     }
 
     private Notification createNotification(final Component text, final Component body) {
@@ -163,6 +165,10 @@ public class MapView extends VerticalLayout {
 
     private Component createFilterTextbox() {
         TextField textField = new TextField();
+        textField.getElement().getStyle().set("background", "var(--lumo-tint-60pct)");
+        textField.getElement().getStyle().set("padding", "4px");
+        textField.getElement().getStyle().set("borderRadius", "5px");
+
         textField.setValueChangeMode(ValueChangeMode.EAGER);
         textField.setClearButtonVisible(true);
         textField.addThemeVariants(TextFieldVariant.LUMO_SMALL);
@@ -178,9 +184,9 @@ public class MapView extends VerticalLayout {
     private void refreshPOIs() {
         places.keySet().forEach(f -> map.getFeatureLayer().removeFeature(f));
         places.clear();
-        ((filter == null || filter.isBlank()) ? repo.findAll()
-                : repo.findByNameContainingIgnoreCase(filter))
-                .stream().filter(p -> p.isEnabled()).forEach(place -> {
+        ((filter == null || filter.isBlank()) ? repo.findAllByEnabledTrue()
+                : repo.findByNameContainingIgnoreCaseAndEnabledTrue(filter))
+                .forEach(place -> {
                     MarkerFeature feat = new MarkerFeature(new Coordinate(place.getX(), place.getY()),
                             MarkerFeature.POINT_ICON);
                     feat.setId(place.getId().toString());
@@ -189,25 +195,25 @@ public class MapView extends VerticalLayout {
                 });
     }
 
-    private void showPlace(Place p) {
+    private void showPlaceInfo(Place p) {
         if (p != null) {
             text.setText(p.getName());
             body.removeAll();
-            body.add(new Html(toHtml(p)));
+            body.add(new Html(placeToHtml(p)));
             notification.open();
         }
     }
 
-    private String toHtml(Place p) {
+    private String placeToHtml(Place p) {
         String coord = String.format("@%f,%f", p.getY(), p.getX());
         String mapUrl = String.format("https://www.google.com/maps/%s,100m/data=!3m1!1e3", coord);
         return "<ul>"
-                + p.getTags().stream().filter(t -> !t.getName().contains(":"))
-                        .map(t -> toHtml(t)).collect(Collectors.joining())
+                + p.getTags().stream().filter(t -> t.isEnabled() && !t.getName().contains(":"))
+                        .map(t -> tagToHtml(t)).collect(Collectors.joining())
                 + String.format("<li><b>coordinates</b>: <a target=_blank href=\"%s\">%s</a></li></ul>", mapUrl, coord);
     }
 
-    private String toHtml(Tag t) {
+    private String tagToHtml(Tag t) {
         String name = t.getName().replace("_", " ");
         String val = t.getVal();
         if ("wikipedia".equals(t.getName())) {
@@ -220,9 +226,13 @@ public class MapView extends VerticalLayout {
         return "<li><b>" + name + "</b>: " + val + "</li>";
     }
 
+    private void showBackground(TileLayer mapLayer, TileLayer satLayer, Component mapButton, Component satButton) {
+        map.setBackgroundLayer(state.defaultSource ? mapLayer : satLayer);
+        mapButton.setVisible(!state.defaultSource);
+        satButton.setVisible(state.defaultSource);
+    }
+
     private Component setupButtons() {
-
-
         MenuBar buttons = new MenuBar();
         buttons.addThemeVariants(MenuBarVariant.LUMO_TERTIARY_INLINE);
         buttons.addThemeVariants(MenuBarVariant.LUMO_END_ALIGNED);
@@ -231,22 +241,19 @@ public class MapView extends VerticalLayout {
 
         buttons.addItem(createFilterTextbox());
 
-        MenuItem mapView = createIconItem(buttons, VaadinIcon.ROAD, "Map View");
-        MenuItem satView = createIconItem(buttons, VaadinIcon.ROCKET, "Satellite View");
-        mapView.setVisible(false);
-
+        MenuItem mapButton = createIconItem(buttons, VaadinIcon.ROAD, "Map View");
+        MenuItem satButton = createIconItem(buttons, VaadinIcon.ROCKET, "Satellite View");
         TileLayer mapLayer = new TileLayer() {{setSource(new OSMSource());}};
         TileLayer satLayer = new TileLayer() {{setSource(new OSMSource() {{setUrl(SAT_URL);}});}};
+        showBackground(mapLayer, satLayer, mapButton, satButton);
 
-        mapView.addClickListener(e -> {
-            map.setBackgroundLayer(mapLayer);
-            mapView.setVisible(false);
-            satView.setVisible(true);
+        mapButton.addClickListener(e -> {
+            state.defaultSource = true;
+            showBackground(mapLayer, satLayer, mapButton, satButton);
         });
-        satView.addClickListener(e -> {
-            map.setBackgroundLayer(satLayer);
-            mapView.setVisible(true);
-            satView.setVisible(false);
+        satButton.addClickListener(e -> {
+            state.defaultSource = false;
+            showBackground(mapLayer, satLayer, mapButton, satButton);
         });
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -255,10 +262,9 @@ public class MapView extends VerticalLayout {
             SubMenu adminSubMenu = admin.getSubMenu();
             MenuItem places = adminSubMenu.addItem("Places");
             MenuItem tags = adminSubMenu.addItem("Tags");
-            places.addClickListener(e -> UI.getCurrent().navigate(PlacesView.class));
-            tags.addClickListener(e -> UI.getCurrent().navigate(TagsView.class));
+            places.addClickListener(e -> UI.getCurrent().navigate("places"));
+            tags.addClickListener(e -> UI.getCurrent().navigate("tags"));
         }
-
         return buttons;
     }
 
@@ -271,4 +277,5 @@ public class MapView extends VerticalLayout {
         item.getElement().getStyle().set("width", "36px");
         return item;
     }
+
 }

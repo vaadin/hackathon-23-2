@@ -13,7 +13,10 @@ public interface PlaceRepository extends JpaRepository<Place, UUID> {
 
   Page<Place> findByNameContainingIgnoreCase(String name, Pageable pageable);
 
-  List<Place> findByNameContainingIgnoreCase(String name);
+  List<Place> findAllByEnabledTrue();
+
+  List<Place> findByNameContainingIgnoreCaseAndEnabledTrue(String name);
 
   List<Place> findByTagsValContaining(String name);
+
 }
