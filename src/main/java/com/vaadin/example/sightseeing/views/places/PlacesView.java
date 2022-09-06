@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import javax.annotation.security.RolesAllowed;
 
+import com.vaadin.flow.data.converter.StringToDoubleConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 
@@ -16,7 +17,6 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
-import com.vaadin.flow.component.datetimepicker.DateTimePicker;
 import com.vaadin.flow.component.dependency.Uses;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
@@ -29,7 +29,6 @@ import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.ValidationException;
-import com.vaadin.flow.data.converter.StringToFloatConverter;
 import com.vaadin.flow.data.renderer.LitRenderer;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
@@ -108,8 +107,8 @@ public class PlacesView extends Div implements BeforeEnterObserver {
         binder = new BeanValidationBinder<>(Place.class);
 
         // Bind fields. This is where you'd define e.g. validation rules
-        binder.forField(x).withConverter(new StringToFloatConverter("Only numbers are allowed")).bind("x");
-        binder.forField(y).withConverter(new StringToFloatConverter("Only numbers are allowed")).bind("y");
+        binder.forField(x).withConverter(new StringToDoubleConverter("Only numbers are allowed")).bind("x");
+        binder.forField(y).withConverter(new StringToDoubleConverter("Only numbers are allowed")).bind("y");
 
         binder.bindInstanceFields(this);
 

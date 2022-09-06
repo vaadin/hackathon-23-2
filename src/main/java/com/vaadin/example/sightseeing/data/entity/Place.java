@@ -13,6 +13,7 @@ import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderColumn;
+import javax.persistence.Transient;
 
 @Entity
 public class Place extends AbstractEntity {
@@ -22,7 +23,8 @@ public class Place extends AbstractEntity {
     private Double x;
     private Double y;
 
-    final String[] tagNames = {"name:es", "name:en", "name", "description:es", "description:en", "historic", "religion"};
+    @Transient
+    private final String[] tagNames = {"name:es", "name:en", "name", "description:es", "description:en", "historic", "religion"};
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     @OrderColumn
