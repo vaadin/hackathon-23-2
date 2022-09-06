@@ -59,6 +59,7 @@ public class MapView extends VerticalLayout {
         	Button cancel = new Button("Cancel");
         	dialog.removeAll();
         	dialog.setHeaderTitle(place.getId().toString());
+        	dialog.getFooter().removeAll();
         	dialog.getFooter().add(cancel,save);
         	dialog.add(form);
         	dialog.open();
