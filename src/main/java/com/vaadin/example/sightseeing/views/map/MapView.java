@@ -23,6 +23,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -57,6 +58,8 @@ public class MapView extends VerticalLayout {
     private static final String SAT_URL = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
 
     private Map map = new Map();
+    Dialog dialog;
+    TextField nameField = new TextField("Name");
     private HashMap<Feature, Place> places = new HashMap<>();
     private Div text = new Div(new Text(""));
     private Div body = new Div();
@@ -101,6 +104,7 @@ public class MapView extends VerticalLayout {
                 + " const feats = map.getFeaturesAtPixel(map.getEventPixel(ev));"
                 + " if (feats.length == 0) {"
                 + "   const coord = map.getCoordinateFromPixel([ev.layerX,ev.layerY]);"
+                + "  console.log('asfasaf', coord);"
                 + "   elm.$server.newPlace(coord[0], coord[1]);"
                 + " } else if (feats.length == 1) {"
                 + "   elm.$server.editPlace(feats[0].id);"
@@ -136,9 +140,47 @@ public class MapView extends VerticalLayout {
     @ClientCallable
     private void newPlace(double lon, double lat) {
         Coordinate coordinate = new Coordinate(lon, lat);
-        MarkerFeature feat = new MarkerFeature(coordinate, MarkerFeature.POINT_ICON);
-        map.getFeatureLayer().addFeature(feat);
-        UI.getCurrent().navigate("places/" + lon + "/" + lat + "/new");
+        newPlace(coordinate);
+        // UI.getCurrent().navigate("places/" + lon + "/" + lat + "/new");
+    }
+
+    private void newPlace(Coordinate coordinate) {
+        Place place = new Place(null, coordinate.getX(), coordinate.getY(), null, null);
+
+        if (dialog == null) {
+            dialog = new Dialog();
+            Button save = new Button("Save");
+            save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+            Button cancel = new Button("Cancel");
+            dialog.setHeaderTitle("New Place");
+            dialog.getFooter().add(cancel, save);
+            save.addClickListener(e -> {
+                place.setName(nameField.getValue());
+                Place saved = repo.save(place);
+                addPointToMap(saved);
+                dialog.close();
+            });
+            cancel.addClickListener(e -> {
+                dialog.close();
+            });
+        }
+        FormLayout form = createForm(place);
+        dialog.removeAll();
+        dialog.add(form);
+        dialog.open();
+    }
+
+    private FormLayout createForm(Place place) {
+        nameField.clear();
+        FormLayout form = new FormLayout();
+        TextField xField = new TextField("X");
+        xField.setValue(place.getX().toString());
+        TextField yField = new TextField("Y");
+        yField.setValue(place.getY().toString());
+        xField.setReadOnly(true);
+        yField.setReadOnly(true);
+        form.add(nameField, xField, yField);
+        return form;
     }
 
     @ClientCallable
@@ -186,13 +228,15 @@ public class MapView extends VerticalLayout {
         places.clear();
         ((filter == null || filter.isBlank()) ? repo.findAllByEnabledTrue()
                 : repo.findByNameContainingIgnoreCaseAndEnabledTrue(filter))
-                .forEach(place -> {
-                    MarkerFeature feat = new MarkerFeature(new Coordinate(place.getX(), place.getY()),
-                            MarkerFeature.POINT_ICON);
-                    feat.setId(place.getId().toString());
-                    map.getFeatureLayer().addFeature(feat);
-                    places.put(feat, place);
-                });
+                .forEach(place -> addPointToMap(place));
+    }
+
+    private void addPointToMap(Place place) {
+        MarkerFeature feat = new MarkerFeature(new Coordinate(place.getX(), place.getY()),
+                MarkerFeature.POINT_ICON);
+        feat.setId(place.getId().toString());
+        map.getFeatureLayer().addFeature(feat);
+        places.put(feat, place);
     }
 
     private void showPlaceInfo(Place p) {

@@ -3,6 +3,7 @@ package com.vaadin.example.sightseeing.data.entity;
 import java.time.LocalDateTime;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -27,7 +28,7 @@ public class Place extends AbstractEntity {
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     @OrderColumn
     @JoinColumn
-    private Set<Tag> tags;
+    private Set<Tag> tags = new HashSet<>();
 
     private Long oid;
 
@@ -45,6 +46,9 @@ public class Place extends AbstractEntity {
        }
        this.x = x;
        this.y = y;
+       if (tags == null) {
+           return;
+       }
        for (String k : tagNames) {
            if (tags.get(k) != null) {
                this.name = tags.get(k);
