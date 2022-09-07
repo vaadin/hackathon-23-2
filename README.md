@@ -54,6 +54,11 @@ Optionally you can deploy a live demo in heroku or any accessible server.
 
 You might want to demo your app to the audience at the end of the session.
 
+In this demo user can do following
+
+* Click on map to add place to the database with a name
+* Click a place on a map to edit it in places view
+
 ## The Sightseeing APP
 
 ACME is a Travel Agency that wants to offer their passengers an App that facilitates tourism in cities along the route.
