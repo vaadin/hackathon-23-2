@@ -31,7 +31,7 @@ public class DataGenerator {
     private static Coordinate SF_OFFICE = new Coordinate(37.3682348,-121.922429);
     private static Coordinate MANOLO_OFFICE = new Coordinate(-3.329561, 40.546502);
 
-    public static final Coordinate CENTER = TURKU_OFFICE;
+    public static final Coordinate CENTER = MANOLO_OFFICE;
     public static final double RATIO = 0.8;
 
     @Bean
